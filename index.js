@@ -3,8 +3,12 @@ const argv = require("yargs").argv;
 const yaml = require("js-yaml");
 
 const base = argv._[1];
-const theirs = argv._[2];
-const ours = argv._[3];
+const ours = argv._[2];
+const theirs = argv._[3];
+
+// const base = argv._[1];
+// const theirs = argv._[2];
+// const ours = argv._[3];
 const filename = argv._[4];
 
 log("---------MERGE STARTED --------- ");
@@ -23,7 +27,6 @@ var outputYaml = "";
 var outputJson = { ...ours_indexmd };
 
 //start
-
 modifyFields();
 modifyParts();
 jsonToYaml(outputJson);
@@ -97,7 +100,7 @@ function modifyParts() {
     }
   });
 
-  outputJson.children=[...our_children]
+  outputJson.children = [...our_children];
 }
 function yamlToJson(c) {
   let content = c + "";
