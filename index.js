@@ -6,7 +6,9 @@ const base = argv._[1];
 const theirs = argv._[2];
 const ours = argv._[3];
 const filename = argv._[4];
+
 log("---------MERGE STARTED --------- ");
+
 const baseContent = fs.readFileSync(base);
 const oursContent = fs.readFileSync(ours);
 const theirsContent = fs.readFileSync(theirs);
@@ -15,26 +17,25 @@ fs.writeFileSync("000-baseContent.txt", baseContent);
 fs.writeFileSync("001-oursContent.txt", oursContent);
 fs.writeFileSync("002-theirsContent.txt", theirsContent);
 
-var outputYaml = "";
-var outputJson = {};
-
 let ours_indexmd = yamlToJson(oursContent);
 let theirs_indexmd = yamlToJson(theirsContent);
+var outputYaml = "";
+var outputJson = { ...ours_indexmd };
 
 //start
 
 modifyFields();
+modifyParts();
 jsonToYaml(outputJson);
 writeContent(outputYaml);
 log("*FINISH *");
-process.exit(0);
+process.exit(1);
 
 function writeContent(c) {
   log(c);
   fs.writeFileSync(ours, c, null, 2);
 }
 function modifyFields() {
-  outputJson = { ...ours_indexmd };
   if (theirs_indexmd.title) {
     if (ours_indexmd.title) {
       if (!ours_indexmd.title.en && theirs_indexmd.title.en) {
@@ -74,14 +75,30 @@ function modifyFields() {
       outputJson["child-type"] = theirs_indexmd["child-type"];
     }
   }
-
   if (theirs_indexmd.categories) {
     if (!ours_indexmd.categories) {
       outputJson.categories = theirs_indexmd.categories;
     }
   }
 }
-function modifyParts() {}
+function modifyParts() {
+  if (!ours_indexmd.children || !theirs_indexmd.children) return;
+  let our_children = [...ours_indexmd.children];
+  let their_children = [...theirs_indexmd.children];
+
+  their_children.forEach((c, i) => {
+    if (!our_children.includes(c)) {
+      if (their_children[i - 1]) {
+        let index = our_children.indexOf(their_children[i - 1]);
+        our_children.splice(index + 1, 0, c);
+      } else {
+        our_children.splice(0, 0, c);
+      }
+    }
+  });
+
+  outputJson.children=[...our_children]
+}
 function yamlToJson(c) {
   let content = c + "";
   content = content.replace("---", "");
