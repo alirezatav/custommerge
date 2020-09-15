@@ -1,40 +1,38 @@
 const fs = require("fs");
 const argv = require("yargs").argv;
 const yaml = require("js-yaml");
-
-// const base = argv._[1];
-// const ours = argv._[2];
-// const theirs = argv._[3];
-// A O B P
-// CURRENT -  AJDAD   -  OTHER  -FILENAME
+/// A O B P ( CURRENT - BASE - OTHER - FILENAME )
 const base = argv._[1];
 const ours = argv._[2];
 const theirs = argv._[0];
-fs.writeFileSync("000000-100-args.json", JSON.stringify(argv));
-const filename = argv._[3];
+
+
+
 const baseContent = fs.readFileSync(base);
 const oursContent = fs.readFileSync(ours);
 const theirsContent = fs.readFileSync(theirs);
 
-fs.writeFileSync("000-baseContent.txt", baseContent);
-fs.writeFileSync("001-oursContent.txt", oursContent);
-fs.writeFileSync("002-theirsContent.txt", theirsContent);
+// fs.writeFileSync("../../000-baseContent.txt", baseContent);
+// fs.writeFileSync("../../001-oursContent.txt", oursContent);
+// fs.writeFileSync("../../002-theirsContent.txt", theirsContent);
 
 let ours_indexmd = yamlToJson(oursContent);
 let theirs_indexmd = yamlToJson(theirsContent);
 var outputYaml = "";
 var outputJson = { ...ours_indexmd };
-
-modifyFields();
-modifyParts();
-jsonToYaml(outputJson);
-writeContent(outputYaml);
-log(" *FINISH * ");
-process.exit(0);
+try {
+  modifyFields();
+  modifyParts();
+  jsonToYaml(outputJson);
+  writeContent(outputYaml);
+  log("FINISH");
+  process.exit(0);
+} catch (error) {
+  process.exit(1);
+}
 
 function writeContent(c) {
   log(c);
-
   fs.writeFileSync(theirs, c);
 }
 function modifyFields() {
@@ -106,7 +104,7 @@ function yamlToJson(c) {
   content = content.replace("---", "");
   content = content.replace("---", "");
   try {
-    return yaml.safeLoad(content);
+    return yaml.load(content);
   } catch (error) {
     log("yamlToJson -- " + error);
   }
@@ -128,5 +126,8 @@ function jsonToYaml(data) {
   }
 }
 function log(d) {
-  fs.appendFileSync("000-LOGSd.txt", "\n - " + d + new Date().toTimeString());
+  fs.appendFileSync(
+    "../../merge-logs.txt",
+    "\n" + new Date().toTimeString() + " : \n - " + d
+  );
 }
