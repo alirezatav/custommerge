@@ -2,17 +2,16 @@ const fs = require("fs");
 const argv = require("yargs").argv;
 const yaml = require("js-yaml");
 
+// const base = argv._[1];
+// const ours = argv._[2];
+// const theirs = argv._[3];
+// A O B P
+// CURRENT -  AJDAD   -  OTHER  -FILENAME
 const base = argv._[1];
 const ours = argv._[2];
-const theirs = argv._[3];
-
-// const base = argv._[1];
-// const theirs = argv._[2];
-// const ours = argv._[3];
-const filename = argv._[4];
-
-log("---------MERGE STARTED --------- ");
-
+const theirs = argv._[0];
+fs.writeFileSync("000000-100-args.json", JSON.stringify(argv));
+const filename = argv._[3];
 const baseContent = fs.readFileSync(base);
 const oursContent = fs.readFileSync(ours);
 const theirsContent = fs.readFileSync(theirs);
@@ -26,17 +25,17 @@ let theirs_indexmd = yamlToJson(theirsContent);
 var outputYaml = "";
 var outputJson = { ...ours_indexmd };
 
-//start
 modifyFields();
 modifyParts();
 jsonToYaml(outputJson);
 writeContent(outputYaml);
-log("*FINISH *");
-process.exit(1);
+log(" *FINISH * ");
+process.exit(0);
 
 function writeContent(c) {
   log(c);
-  fs.writeFileSync(ours, c, null, 2);
+
+  fs.writeFileSync(theirs, c);
 }
 function modifyFields() {
   if (theirs_indexmd.title) {
