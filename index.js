@@ -1,38 +1,26 @@
 const fs = require("fs");
 const argv = require("yargs").argv;
 const yaml = require("js-yaml");
-/// A O B P ( CURRENT - BASE - OTHER - FILENAME )
+/// A O B P ( CURRENT - BASE - OTHER - FILEPATH )
 const base = argv._[1];
 const ours = argv._[2];
 const theirs = argv._[0];
-
-
 
 const baseContent = fs.readFileSync(base);
 const oursContent = fs.readFileSync(ours);
 const theirsContent = fs.readFileSync(theirs);
 
-// fs.writeFileSync("../../000-baseContent.txt", baseContent);
-// fs.writeFileSync("../../001-oursContent.txt", oursContent);
-// fs.writeFileSync("../../002-theirsContent.txt", theirsContent);
-
 let ours_indexmd = yamlToJson(oursContent);
 let theirs_indexmd = yamlToJson(theirsContent);
 var outputYaml = "";
 var outputJson = { ...ours_indexmd };
-try {
-  modifyFields();
-  modifyParts();
-  jsonToYaml(outputJson);
-  writeContent(outputYaml);
-  log("FINISH");
-  process.exit(0);
-} catch (error) {
-  process.exit(1);
-}
 
+// Helpers
+start()
+
+// Helpers
 function writeContent(c) {
-  log(c);
+  log("Result => " + c);
   fs.writeFileSync(theirs, c);
 }
 function modifyFields() {
@@ -75,16 +63,26 @@ function modifyFields() {
       outputJson["child-type"] = theirs_indexmd["child-type"];
     }
   }
+  if (theirs_indexmd.children) {
+    let ordered = modifyOrder(ours_indexmd.children, theirs_indexmd.children);
+    if (ordered) outputJson.children = ordered;
+  }
   if (theirs_indexmd.categories) {
-    if (!ours_indexmd.categories) {
-      outputJson.categories = theirs_indexmd.categories;
-    }
+    let ordered = modifyOrder(
+      ours_indexmd.categories,
+      theirs_indexmd.categories
+    );
+    if (ordered) outputJson.categories = ordered;
+  }
+  if (theirs_indexmd.tags) {
+    let ordered = modifyOrder(ours_indexmd.tags, theirs_indexmd.tags);
+    if (ordered) outputJson.tags = ordered;
   }
 }
-function modifyParts() {
-  if (!ours_indexmd.children || !theirs_indexmd.children) return;
-  let our_children = [...ours_indexmd.children];
-  let their_children = [...theirs_indexmd.children];
+function modifyOrder(ourList, theirList) {
+  if (!Array.isArray(ourList) || !Array.isArray(theirList)) return;
+  let our_children = [...ourList];
+  let their_children = [...theirList];
 
   their_children.forEach((c, i) => {
     if (!our_children.includes(c)) {
@@ -97,7 +95,7 @@ function modifyParts() {
     }
   });
 
-  outputJson.children = [...our_children];
+  return [...new Set(our_children)];
 }
 function yamlToJson(c) {
   let content = c + "";
@@ -106,7 +104,7 @@ function yamlToJson(c) {
   try {
     return yaml.load(content);
   } catch (error) {
-    log("yamlToJson -- " + error);
+    log("error : yamlToJson -- " + error);
   }
 }
 function jsonToYaml(data) {
@@ -122,7 +120,7 @@ function jsonToYaml(data) {
     outputYaml = "---\n" + output + "\n---";
     return outputYaml;
   } catch (error) {
-    log("jsonToYaml -- " + error);
+    log("error : jsonToYaml -- " + error);
   }
 }
 function log(d) {
@@ -130,4 +128,15 @@ function log(d) {
     "../../merge-logs.txt",
     "\n" + new Date().toTimeString() + " : \n - " + d
   );
+}
+function start() {
+  try {
+    modifyFields();
+    jsonToYaml(outputJson);
+    writeContent(outputYaml);
+    process.exit(0);
+  } catch (error) {
+    log("Merge Error : " + error);
+    process.exit(1);
+  }
 }
